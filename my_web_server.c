@@ -35,40 +35,41 @@ int main(int argc, char** argv){
     if(sigaction(SIGINT, &sgnl, NULL) == -1)
         OOPS("sigaction()");
 
-    char ip_buf[INET_ADDRSTRLEN];
+    char* ip_buf;
     int socket_fd;
-    if((socket_fd = setup_socket_for_server(argv[1], LISTENERS_COUNT, ip_buf)) == -1)
+    if((socket_fd = setup_socket_for_server(argv[1], LISTENERS_COUNT, &ip_buf)) == -1)
         return 1;
 
-    printf("Server opened at address http://%s:%s\n", ip_buf, argv[1]);
-    print_log("Server opened: ");
     time_t t = time(NULL);
-    print_log(ctime(&t));
+    printf("Server opened at address http://%s:%s\n", ip_buf, argv[1]);
+    print_log("Server opened: %s", ctime(&t));
 
     while(1){
+        struct query_info q_info;
         int client_fd;
-        struct sockaddr_in claddr;
-        socklen_t adlen = sizeof(claddr);
-        if((client_fd = accept(socket_fd, (struct sockaddr*)&claddr, &adlen)) == -1){
+
+        q_info.addr_len = sizeof(q_info.client_addr);
+        if((client_fd = accept(socket_fd, (struct sockaddr*)&q_info.client_addr, &q_info.addr_len)) == -1){
             exit(1);
         }
-           // OOPS("accept()");
 
         char buf[BUFSIZ];
-        FILE* client_fp;
-        if((client_fp = fdopen(client_fd, "r")) == NULL)
+        if((q_info.client_fp = fdopen(client_fd, "r")) == NULL)
             OOPS("fdopen()");
-        if(fgets(buf, sizeof(buf), client_fp) == NULL){
+        if(fgets(buf, sizeof(buf), q_info.client_fp) == NULL){
             printf("%s - err\n", buf);
-            if(!feof(client_fp))
+            if(!feof(q_info.client_fp))
                 perror("fgets()");
-            fclose(client_fp);
+            fclose(q_info.client_fp);
             continue;
         }
-        read_until_crnl(client_fp);
+
+        read_until_crnl(q_info.client_fp);
         buf[strcspn(buf, "\r\n")] = '\0';
-        process_request(buf,inet_ntoa(claddr.sin_addr), client_fp);
-        fclose(client_fp);
+
+        q_info.query = buf;
+        process_request(&q_info);
+        fclose(q_info.client_fp);
     }
     return 0;
 }

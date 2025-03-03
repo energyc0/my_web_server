@@ -5,8 +5,18 @@
 
 #define OOPS(msg){perror(msg); exit(EXIT_FAILURE);}
 
-//print log and flush to file
-void print_log(char* msg);
+/*
+struct query_info{
+    //char ip_buf[INET_ADDRSTRLEN];
+    char* query;
+    struct sockaddr_in client_addr;
+    socklen_t addr_len;
+    FILE* client_fp;
+};
+*/
+
+//print formatted log and flush to file
+void print_log(const char* fmt, ...);
 //skip until EOF or "\r\n" line
 void read_until_crnl(FILE* fp);
 //return char* pointer on the same string

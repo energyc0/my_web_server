@@ -9,7 +9,7 @@
 
 static struct addrinfo* get_host_info(struct addrinfo** res, const char* serv_host, const char* serv_port);
 
-int setup_socket_for_server(const char* serv_port, int listeners, char* info_buf){
+int setup_socket_for_server(const char* serv_port, int listeners, char** info_buf){
     int socket_fd;
     if((socket_fd = socket(PF_INET, SOCK_STREAM, 0)) == -1){
         perror("socket()");
@@ -37,7 +37,7 @@ int setup_socket_for_server(const char* serv_port, int listeners, char* info_buf
     }
 
     if(info_buf != NULL){
-        strcpy(info_buf, inet_ntoa(((struct sockaddr_in*)p->ai_addr)->sin_addr));
+        *info_buf = inet_ntoa(((struct sockaddr_in*)p->ai_addr)->sin_addr);
     }
     freeaddrinfo(res);
     return socket_fd;

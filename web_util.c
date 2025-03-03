@@ -2,18 +2,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 #define SERVER_LOG_FILE "my_web_server.log"
 
-void print_log(char* msg){
+void print_log(const char* fmt, ...){
     static FILE* log_fp = NULL;
     if(log_fp == NULL){
         log_fp = fopen(SERVER_LOG_FILE, "a");
         if(log_fp == NULL)
             OOPS("fopen");
     }
-    fprintf(log_fp, "%s", msg);
+
+    va_list ap;
+    va_start(ap, fmt);
+
+    vfprintf(log_fp, fmt, ap);
     fflush(log_fp);
+
+    va_end(ap);
 }
 
 void read_until_crnl(FILE* fp){
