@@ -6,6 +6,8 @@
 
 #define SERVER_LOG_FILE "my_web_server.log"
 
+static int is_in_cgi_bin(char* filename);
+
 void print_log(const char* fmt, ...){
     static FILE* log_fp = NULL;
     if(log_fp == NULL){
@@ -34,7 +36,7 @@ char* get_file_extension(char* filename){
 }
 
 int is_cgi_file(char* filename){
-    return strcmp("cgi", get_file_extension(filename)) == 0;
+    return strcmp("cgi", get_file_extension(filename)) == 0 || is_in_cgi_bin(filename);
 }
 
 char* get_content_type(char* file_extension){
@@ -44,10 +46,27 @@ char* get_content_type(char* file_extension){
         sprintf(buf, "image/%s", file_extension);
     }else if(strcmp("html", file_extension) == 0 || strcmp("xml", file_extension) == 0){
         sprintf(buf, "text/%s", file_extension);
-    }else if(strcmp("MP4", file_extension) == 0 || strcmp("mp4", file_extension)){
+    }else if(strcmp("MP4", file_extension) == 0 || strcmp("mp4", file_extension) == 0){
         sprintf(buf, "video/%s", file_extension);
     }else{
         sprintf(buf, "text/plain");
     }
     return buf;
+}
+
+static int is_in_cgi_bin(char* filename){
+    char* prev = strchr(filename, '/');
+    if(prev){
+        for(char* next = strchr(prev+1, '/'); next != NULL; prev = next, next = strchr(prev+1, '/')){
+            char temp = *next;
+            *next = '\0';
+            if(strcmp("/cgi-bin", prev) == 0){
+                *next = temp;
+                return 1;
+            }
+
+            *next = temp;
+        }
+    }
+    return 0;
 }

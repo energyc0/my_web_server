@@ -13,7 +13,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-#define LISTENERS_COUNT 10
+#define LISTENERS_COUNT 1
 
 static void sigchild_handler(int code);
 static void sigint_handler(int code);
@@ -46,9 +46,12 @@ int main(int argc, char** argv){
 
     while(1){
         struct query_info q_info;
+        memset(&q_info,0,sizeof(q_info));
+        q_info.server_port = argv[1];
+        q_info.addr_len = sizeof(q_info.client_addr);
+
         int client_fd;
 
-        q_info.addr_len = sizeof(q_info.client_addr);
         if((client_fd = accept(socket_fd, (struct sockaddr*)&q_info.client_addr, &q_info.addr_len)) == -1){
             exit(1);
         }
