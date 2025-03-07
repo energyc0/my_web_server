@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <fcntl.h>
 
 #define NOT_FOUND_REQUEST_404 "HTTP/1.0 404 Not found"
 #define BAD_REQUEST_400 "HTTP/1.0 400 Bad request"
@@ -21,14 +22,15 @@ static void invalid_request(const struct query_info* info);
 static void print_header(char* result, char* content_type, unsigned int content_len);
 
 static void head_result(const struct query_info* info);
+static void post_result(const struct query_info* info);
 static void cat_file(const struct query_info* info);
 static void ls_dir(const struct query_info* info);
 static void exec_cgi(const struct query_info* info);
 static void undefined_file(const struct query_info* info);
 
 void process_request(struct query_info* q_info){
-    if(fork() != 0)
-        return;
+    //if(fork() != 0)
+     //   return;
 
     int fd = fileno(q_info->client_fp);
     dup2(fd, 1);
@@ -47,7 +49,12 @@ void process_request(struct query_info* q_info){
     struct stat file_info;
     q_info->file_info = &file_info;
     if(stat(filename, &file_info) == -1){
-        undefined_file(q_info);
+        if(q_info->http_method != M_POST)
+            undefined_file(q_info);
+        q_info->file_info = NULL;
+    }
+    if(q_info->http_method == M_POST){
+        post_result(q_info);
     }
     if(q_info->http_method == M_HEAD){
         if(S_ISREG(file_info.st_mode))
@@ -55,6 +62,8 @@ void process_request(struct query_info* q_info){
         else
             invalid_request(q_info);
     }
+    if(q_info->http_method == M_POST)
+        post_result(q_info);
     else if(S_ISDIR(file_info.st_mode)){
         ls_dir(q_info);
     }else if(S_ISREG(file_info.st_mode)){
@@ -135,11 +144,29 @@ static enum method_t get_method(char* s){
         return M_GET;
     else if(strcmp("HEAD", s) == 0)
         return M_HEAD;
+    else if(strcmp("POST", s) == 0)
+        return M_POST;
     return M_NONE;
 }
 
 static void head_result(const struct query_info* info){
     print_header(NULL, get_content_type(get_file_extension(info->http_filename)), info->file_info->st_size);
     print_log("%s requested \"%s\"\n", inet_ntoa(info->client_addr.sin_addr), info->query);
+    exit(EXIT_SUCCESS);
+}
+
+static void post_result(const struct query_info* info){
+    int fd;
+    if((info->file_info && !S_ISREG(info->file_info->st_mode)) ||
+     (fd = open(info->http_filename, O_WRONLY | O_CREAT | O_APPEND, 0644)) == -1 || 
+     write(fd, info->add_info, strlen(info->add_info)) == -1){
+        print_header(NOT_FOUND_REQUEST_404, "text/plain", 0);
+        exit(EXIT_FAILURE);
+    }
+
+    print_header(OK_REQUEST_200, "text/plain", strlen(info->add_info));
+    //printf("Received POST data\n");
+    print_log("Received POST data from %s:\n%s\n", inet_ntoa(info->client_addr.sin_addr), info->add_info);
+
     exit(EXIT_SUCCESS);
 }

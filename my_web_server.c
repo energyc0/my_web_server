@@ -23,7 +23,7 @@ int main(int argc, char** argv){
         fprintf(stderr, "Server port expected\n");
         return 1;
     }
-
+    
     struct sigaction sgnl;
     memset(&sgnl, 0, sizeof(sgnl));
     sgnl.sa_handler = sigchild_handler;
@@ -70,6 +70,15 @@ int main(int argc, char** argv){
         read_until_crnl(q_info.client_fp);
         buf[strcspn(buf, "\r\n")] = '\0';
 
+        char add_info[BUFSIZ];
+        if(fgets(add_info, sizeof(add_info), q_info.client_fp) == NULL){
+            perror("fgets()");
+            fclose(q_info.client_fp);
+            continue;
+        }
+        add_info[strcspn(buf, "\r\n")] = '\0';
+
+        q_info.add_info = add_info;
         q_info.query = buf;
         process_request(&q_info);
         fclose(q_info.client_fp);

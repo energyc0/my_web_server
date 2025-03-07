@@ -7,7 +7,8 @@
 enum method_t{
     M_NONE = 0,
     M_GET,
-    M_HEAD
+    M_HEAD,
+    M_POST
 };
 
 struct query_info{
@@ -19,6 +20,7 @@ struct query_info{
     char* http_ver;
 
     char* query;
+    char* add_info;
     struct sockaddr_in client_addr;
     socklen_t addr_len;
     FILE* client_fp;
