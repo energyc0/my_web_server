@@ -1,4 +1,6 @@
 #include "web_util.h"
+#include <pthread.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +12,8 @@ static int is_in_cgi_bin(char* filename);
 
 void print_log(const char* fmt, ...){
     static FILE* log_fp = NULL;
+    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_lock(&mutex);
     if(log_fp == NULL){
         log_fp = fopen(SERVER_LOG_FILE, "a");
         if(log_fp == NULL)
@@ -23,6 +27,7 @@ void print_log(const char* fmt, ...){
     fflush(log_fp);
 
     va_end(ap);
+    pthread_mutex_unlock(&mutex);
 }
 
 void read_until_crnl(FILE* fp){
@@ -69,4 +74,20 @@ static int is_in_cgi_bin(char* filename){
         }
     }
     return 0;
+}
+
+void sanitize_string(char* s){
+    char* ptr = s;
+    while (*ptr != '\0') {
+        if(*ptr != ';')
+            *s++ = *ptr;
+        ptr++;
+    }
+}
+
+void copy_stream(FILE* dst_fp, FILE* src_fp){
+    int ch;
+    while ((ch = getc(src_fp)) != EOF) {
+        putc(ch, dst_fp);
+    }
 }

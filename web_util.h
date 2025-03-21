@@ -5,16 +5,6 @@
 
 #define OOPS(msg){perror(msg); exit(EXIT_FAILURE);}
 
-/*
-struct query_info{
-    //char ip_buf[INET_ADDRSTRLEN];
-    char* query;
-    struct sockaddr_in client_addr;
-    socklen_t addr_len;
-    FILE* client_fp;
-};
-*/
-
 //print formatted log and flush to file
 void print_log(const char* fmt, ...);
 //skip until EOF or "\r\n" line
@@ -25,5 +15,8 @@ char* get_file_extension(char* filename);
 int is_cgi_file(char* filename);
 //get content type for HTTP answer
 char* get_content_type(char* file_extension);
-
+//erase all ';' characters
+void sanitize_string(char* s);
+//copy data from src_fp to dst_fp
+void copy_stream(FILE* dst_fp, FILE* src_fp);
 #endif

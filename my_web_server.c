@@ -51,7 +51,7 @@ int main(int argc, char** argv){
         memset(&q_info,0,sizeof(q_info));
         q_info.server_port = argv[1];
         q_info.addr_len = sizeof(q_info.client_addr);
-
+        q_info.server_ip = ip_buf;
         int client_fd;
 
         if((client_fd = accept(socket_fd, (struct sockaddr*)&q_info.client_addr, &q_info.addr_len)) == -1){
@@ -59,7 +59,7 @@ int main(int argc, char** argv){
         }
 
         char buf[BUFSIZ];
-        if((q_info.client_fp = fdopen(client_fd, "r")) == NULL)
+        if((q_info.client_fp = fdopen(client_fd, "a+")) == NULL)
             OOPS("fdopen()");
         if(fgets(buf, sizeof(buf), q_info.client_fp) == NULL){
             printf("%s - err\n", buf);
@@ -89,7 +89,6 @@ int main(int argc, char** argv){
         q_info.add_info = add_info;
         q_info.query = buf;
         process_request(&q_info);
-        fclose(q_info.client_fp);
     }
     return 0;
 }
