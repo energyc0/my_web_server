@@ -29,8 +29,8 @@ static void exec_cgi(const struct query_info* info);
 static void undefined_file(const struct query_info* info);
 
 void process_request(struct query_info* q_info){
-    //if(fork() != 0)
-     //   return;
+    if(fork() != 0)
+        return;
 
     int fd = fileno(q_info->client_fp);
     dup2(fd, 1);

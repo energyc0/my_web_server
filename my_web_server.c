@@ -1,6 +1,7 @@
 #include "socklib.h"
 #include "web_util.h"
 #include "child_processor.h"
+#include <asm-generic/ioctls.h>
 #include <signal.h>
 #include <time.h>
 #include <sys/time.h>
@@ -12,6 +13,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
 
 #define LISTENERS_COUNT 1
 
@@ -71,12 +73,18 @@ int main(int argc, char** argv){
         buf[strcspn(buf, "\r\n")] = '\0';
 
         char add_info[BUFSIZ];
-        if(fgets(add_info, sizeof(add_info), q_info.client_fp) == NULL){
-            perror("fgets()");
-            fclose(q_info.client_fp);
-            continue;
+        int bytes_avail;
+        ioctl(0, FIONREAD, &bytes_avail);
+        if(bytes_avail > 0){
+            if(fgets(add_info, sizeof(add_info), q_info.client_fp) == NULL){
+                perror("fgets()");
+                fclose(q_info.client_fp);
+                continue;
+            }
+            add_info[strcspn(buf, "\r\n")] = '\0';
+        }else{
+            add_info[0] = '\0';
         }
-        add_info[strcspn(buf, "\r\n")] = '\0';
 
         q_info.add_info = add_info;
         q_info.query = buf;
